@@ -1,0 +1,19 @@
+0 verbose cli /opt/homebrew/Cellar/node@20/20.20.2/bin/node /opt/homebrew/bin/npm
+1 info using npm@10.8.2
+2 info using node@v20.20.2
+3 silly config load:file:/opt/homebrew/Cellar/node@20/20.20.2/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/invictus/Desktop/Local Automations/radroid/nixbot-saas-ui/.npmrc
+5 silly config load:file:/Users/invictus/.npmrc
+6 silly config load:file:/Users/invictus/.npm-global/etc/npmrc
+7 verbose title npm run dev
+8 verbose argv "run" "dev"
+9 verbose logfile logs-max:10 dir:/Users/invictus/Desktop/Local Automations/radroid/nixbot-saas-ui/.npm-cache/_logs/2026-04-19T17_13_43_344Z-
+10 verbose logfile /Users/invictus/Desktop/Local Automations/radroid/nixbot-saas-ui/.npm-cache/_logs/2026-04-19T17_13_43_344Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 verbose cwd /Users/invictus/Desktop/Local Automations/radroid/nixbot-saas-ui
+14 verbose os Darwin 24.5.0
+15 verbose node v20.20.2
+16 verbose npm  v10.8.2
+17 verbose exit 143
+18 verbose code 143

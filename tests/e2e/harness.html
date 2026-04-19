@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Realtime E2E Harness</title>
+  </head>
+  <body>
+    <h1>Realtime Harness</h1>
+    <pre id="log"></pre>
+    <script type="module">
+      const params = new URLSearchParams(location.search);
+      const customer = params.get('customer') ?? '';
+      const channels = ['account_state_changed', 'balance_changed', 'batch_progress'];
+
+      const state = {
+        accounts: {},
+        balance_cents: null,
+        batches: {},
+        transport: 'closed',
+        errors: 0,
+        opens: 0,
+      };
+      window.__state = state;
+
+      const log = document.getElementById('log');
+      function append(line) {
+        log.textContent += line + '\n';
+      }
+
+      function apply(channel, data) {
+        try {
+          const p = JSON.parse(data);
+          if (channel === 'account_state_changed') {
+            if (p.account_id && p.status) state.accounts[p.account_id] = { id: p.account_id, status: p.status };
+          } else if (channel === 'balance_changed') {
+            if (typeof p.balance_cents === 'number') state.balance_cents = p.balance_cents;
+          } else if (channel === 'batch_progress') {
+            if (p.batch_id) state.batches[p.batch_id] = p;
+          }
+        } catch {
+          // ignore malformed payload
+        }
+      }
+
+      let attempt = 0;
+      let current = null;
+      let reconnectTimer = null;
+
+      function open() {
+        const url = `/customer/events?customer=${encodeURIComponent(customer)}`;
+        const es = new EventSource(url);
+        current = es;
+        state.transport = 'sse';
+        es.onopen = () => {
+          attempt = 0;
+          state.opens += 1;
+          append('open');
+        };
+        es.onerror = () => {
+          state.errors += 1;
+          append('error');
+          es.close();
+          if (current === es) current = null;
+          const delay = Math.min(30000, 500 * Math.pow(2, attempt));
+          attempt += 1;
+          reconnectTimer = setTimeout(open, delay);
+        };
+        for (const ch of channels) {
+          es.addEventListener(ch, (ev) => {
+            append(`${ch}: ${ev.data}`);
+            apply(ch, ev.data);
+          });
+        }
+      }
+
+      window.__close = () => {
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+        if (current) current.close();
+        state.transport = 'closed';
+      };
+
+      open();
+    </script>
+  </body>
+</html>

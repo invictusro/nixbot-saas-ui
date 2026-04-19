@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+.vitest
+.DS_Store
+.git
+.gitignore
+tests
+test-results
+playwright-report
+.npm-cache
