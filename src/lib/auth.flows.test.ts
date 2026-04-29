@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { createAuthClient, AuthError } from './auth';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createAuthClient, AuthError, accessToken } from './auth';
 
 interface Call {
   url: string;
@@ -49,6 +49,42 @@ describe('auth flows', () => {
     const err = await client.verifyEmail('a@b.com', '000000').catch((e) => e);
     expect(err).toBeInstanceOf(AuthError);
     expect(err).toMatchObject({ status: 400, message: 'wrong code', code: 'invalid_code' });
+  });
+
+  it('setupPassword posts token + new_password, stores access token, returns user', async () => {
+    accessToken.set(null);
+    const b64 = (s: string) =>
+      Buffer.from(s).toString('base64').replace(/=+$/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const jwt = `${b64('{"alg":"HS256","typ":"JWT"}')}.${b64('{"user_id":"u42"}')}.sig`;
+    const { fetch, calls } = mockFetch([
+      { body: { access_token: jwt, email: 'a@b.com', token_type: 'Bearer' } },
+    ]);
+    const client = createAuthClient({ fetch, baseUrl: 'http://x' });
+    const user = await client.setupPassword('tok_abc', 'longenoughpw');
+    expect(user).toMatchObject({ id: 'u42', email: 'a@b.com' });
+    expect(accessToken.get()).toBe(jwt);
+    expect(calls[0].url).toBe('http://x/api/auth/setup-password');
+    expect(calls[0].init.method).toBe('POST');
+    expect(calls[0].init.credentials).toBe('include');
+    expect(calls[0].init.body).toBe(
+      JSON.stringify({ token: 'tok_abc', new_password: 'longenoughpw' }),
+    );
+  });
+
+  it('setupPassword surfaces typed AuthError on expired/invalid token', async () => {
+    accessToken.set(null);
+    const { fetch } = mockFetch([
+      {
+        status: 400,
+        statusText: 'Bad Request',
+        body: { error: 'token expired', code: 'token_expired' },
+      },
+    ]);
+    const client = createAuthClient({ fetch });
+    const err = await client.setupPassword('bad', 'longenoughpw').catch((e) => e);
+    expect(err).toBeInstanceOf(AuthError);
+    expect(err).toMatchObject({ status: 400, code: 'token_expired' });
+    expect(accessToken.get()).toBeNull();
   });
 
   it('password reset request → confirm sends snake_case new_password', async () => {

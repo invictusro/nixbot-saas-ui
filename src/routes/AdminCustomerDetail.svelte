@@ -75,14 +75,8 @@
     impersonatePending = true;
     impersonateError = '';
     try {
-      const res = await adminClient.impersonate(id);
-      session.set({
-        user: {
-          id: res.user.id,
-          email: res.user.email,
-          impersonated_by: res.user.impersonated_by ?? null,
-        },
-      });
+      const user = await adminClient.impersonate(id, { email: detail?.email });
+      session.set({ user });
       navigate('/dashboard');
     } catch (err) {
       impersonateError = err instanceof Error ? err.message : 'Failed to impersonate';

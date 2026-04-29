@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = Number(process.env.E2E_PORT ?? 4455);
 const BASE = `http://127.0.0.1:${PORT}`;
+const UI_PORT = Number(process.env.E2E_UI_PORT ?? 4173);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -20,12 +21,21 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: `node tests/e2e/server.mjs`,
-    port: PORT,
-    reuseExistingServer: !process.env.CI,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: { PORT: String(PORT) },
-  },
+  webServer: [
+    {
+      command: `node tests/e2e/server.mjs`,
+      port: PORT,
+      reuseExistingServer: !process.env.CI,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: { PORT: String(PORT) },
+    },
+    {
+      command: `npx vite preview --host 127.0.0.1 --port ${UI_PORT} --strictPort`,
+      port: UI_PORT,
+      reuseExistingServer: !process.env.CI,
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  ],
 });
